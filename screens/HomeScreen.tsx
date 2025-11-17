@@ -1,5 +1,4 @@
-// screens/HomeScreen.tsx — HS4 FIXED
-// [MIGLIORATA] Stili più visibili, separatori tra card e fix dell'errore di testo
+// screens/HomeScreen.tsx — Lista post con preferiti ⭐ salvati in AsyncStorage
 
 import React, { useEffect, useState } from "react";
 import {
@@ -7,12 +6,14 @@ import {
   Text,
   FlatList,
   ActivityIndicator,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
 } from "react-native";
-import { API_URL } from "../utils/constants";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useIsFocused } from "@react-navigation/native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import { API_URL } from "../utils/constants";
 
 type Post = {
   id: number;
@@ -20,27 +21,67 @@ type Post = {
   body: string;
 };
 
+const FAVORITES_KEY = "favorites_posts";
+
 export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [posts, setPosts] = useState<Post[]>([]);
-  const navigation = useNavigation();
-
+  const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
+  const navigation = useNavigation<any>();
+  const isFocused = useIsFocused();
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const response = await fetch(API_URL);
-        const data: Post[] = await response.json();
-        setPosts(data);
-      } catch (error) {
-        console.error("Errore nel caricamento dei post:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchPosts();
   }, []);
+
+  useEffect(() => {
+    if (isFocused) {
+      loadFavorites();
+    }
+  }, [isFocused]);
+
+  const fetchPosts = async () => {
+    try {
+      const response = await fetch(API_URL);
+      const data: Post[] = await response.json();
+      setPosts(data);
+    } catch (error) {
+      console.error("Errore nel caricamento dei post:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadFavorites = async () => {
+    try {
+      const stored = await AsyncStorage.getItem(FAVORITES_KEY);
+      if (!stored) {
+        setFavoriteIds([]);
+        return;
+      }
+      const arr: number[] = JSON.parse(stored);
+      setFavoriteIds(arr);
+    } catch (error) {
+      console.log("Errore caricamento preferiti (home)", error);
+    }
+  };
+
+  const toggleFavoriteFromList = async (postId: number) => {
+    try {
+      let updated: number[];
+
+      if (favoriteIds.includes(postId)) {
+        updated = favoriteIds.filter((id) => id !== postId);
+      } else {
+        updated = [...favoriteIds, postId];
+      }
+
+      setFavoriteIds(updated);
+      await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(updated));
+    } catch (error) {
+      console.log("Errore salvataggio preferiti (home)", error);
+    }
+  };
 
   if (loading) {
     return (
@@ -51,38 +92,57 @@ export default function HomeScreen() {
     );
   }
 
-  // Funzione che definisce come disegnare ogni card
-  const renderItem = ({ item }: { item: Post }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => navigation.navigate("DetailScreen" as never, { post: item } as never)}
+  const renderItem = ({ item }: { item: Post }) => {
+    const isFavorite = favoriteIds.includes(item.id);
 
-    >
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.body} numberOfLines={2}>
-        {item.body}
-      </Text>
-    </TouchableOpacity>
-  );
+    return (
+      <View style={styles.cardWrapper}>
+        <Pressable
+          style={styles.card}
+          onPress={() => navigation.navigate("DetailScreen", { post: item })}
+        >
+          <View style={styles.cardHeaderRow}>
+            <Text style={styles.title} numberOfLines={1}>
+              {item.title}
+            </Text>
+
+            <Pressable
+              onPress={() => toggleFavoriteFromList(item.id)}
+              hitSlop={10}
+            >
+              <Ionicons
+                name={isFavorite ? "star" : "star-outline"}
+                size={20}
+                color={isFavorite ? "#ffd166" : "#888"}
+              />
+            </Pressable>
+          </View>
+
+          <Text style={styles.body} numberOfLines={2}>
+            {item.body}
+          </Text>
+        </Pressable>
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
       <FlatList
         data={posts}
-        renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
-        ItemSeparatorComponent={() => <View style={styles.separator} />} // [NUOVO] Spazio tra card
+        renderItem={renderItem}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
         contentContainerStyle={{ padding: 12 }}
       />
     </View>
   );
 }
 
-// [NUOVO] Stili locali, per test visivo chiaro
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff", // sfondo bianco principale
+    backgroundColor: "#fff",
   },
   centered: {
     flex: 1,
@@ -95,26 +155,32 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#333",
   },
+  cardWrapper: {
+    borderRadius: 12,
+    overflow: "hidden",
+  },
   card: {
     backgroundColor: "#f2f2f2",
-    borderRadius: 12,
     padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 3, // ombra Android
+    borderRadius: 12,
+  },
+  cardHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
   },
   title: {
     fontWeight: "bold",
     fontSize: 16,
-    marginBottom: 4,
     color: "#000",
+    flex: 1,
+    marginRight: 8,
   },
   body: {
     color: "#444",
   },
   separator: {
-    height: 10, // spazio visivo tra card
+    height: 10,
   },
 });

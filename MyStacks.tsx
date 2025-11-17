@@ -13,13 +13,11 @@ function HomePlaceholder({ navigation }: any) {
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
       <Text>Home (Stack)</Text>
-      {/* [NUOVO] Pulsante che naviga alla schermata di dettaglio */}
       <Button title="Vai ai dettagli" onPress={() => navigation.navigate("DetailScreen")} />
     </View>
   );
 }
 
-// [NUOVO] Schermata di dettaglio
 function DetailPlaceholder() {
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
