@@ -1,5 +1,3 @@
-// screens/DetailScreen.tsx — Like locale + Preferiti persistenti (AsyncStorage)
-
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, Pressable, Alert } from "react-native";
 import { useRoute } from "@react-navigation/native";
@@ -17,14 +15,9 @@ const FAVORITES_KEY = "favorites_posts";
 export default function DetailScreen() {
   const route = useRoute();
   const { post } = route.params as { post: Post };
-
-  // ❤️ Like: SOLO STATO LOCALE (NON salvato in AsyncStorage)
   const [liked, setLiked] = useState(false);
-
-  // ⭐ Preferito: salvato in AsyncStorage
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // Al montaggio, carichiamo se il post è tra i preferiti
   useEffect(() => {
     loadFavoriteState();
   }, []);
@@ -43,7 +36,6 @@ export default function DetailScreen() {
     }
   };
 
-  // ❤️ toggla solo lo stato in memoria
   const toggleLike = () => {
     const newValue = !liked;
     setLiked(newValue);
@@ -52,18 +44,15 @@ export default function DetailScreen() {
     }
   };
 
-  // ⭐ aggiungi/rimuovi dai preferiti e salva in AsyncStorage
   const toggleFavorite = async () => {
     try {
       const stored = await AsyncStorage.getItem(FAVORITES_KEY);
       let favorites: number[] = stored ? JSON.parse(stored) : [];
 
       if (favorites.includes(post.id)) {
-        // rimuovi dai preferiti
         favorites = favorites.filter((id) => id !== post.id);
         setIsFavorite(false);
       } else {
-        // aggiungi ai preferiti
         favorites.push(post.id);
         setIsFavorite(true);
         Alert.alert("Post aggiunto ai preferiti!");
@@ -77,7 +66,6 @@ export default function DetailScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header + pulsante Preferiti ⭐ */}
       <View style={styles.headerRow}>
         <Text style={styles.header}>Dettaglio del Post</Text>
 
@@ -89,14 +77,11 @@ export default function DetailScreen() {
           />
         </Pressable>
       </View>
-
-      {/* Card contenuto */}
       <View style={styles.card}>
         <Text style={styles.title}>{post.title}</Text>
         <Text style={styles.body}>{post.body}</Text>
       </View>
 
-      {/* Bottone Like ❤️ (solo stato locale) */}
       <Pressable
         onPress={toggleLike}
         style={[

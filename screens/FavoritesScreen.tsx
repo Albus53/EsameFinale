@@ -1,11 +1,8 @@
-// screens/FavoritesScreen.tsx — Schermata Preferiti con titolo
-
 import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, Pressable, StyleSheet } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useIsFocused } from "@react-navigation/native";
-
 import { API_URL } from "../utils/constants";
 
 type Post = {

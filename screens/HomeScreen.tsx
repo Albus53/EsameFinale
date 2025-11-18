@@ -1,5 +1,3 @@
-// screens/HomeScreen.tsx — Lista post con preferiti ⭐ salvati in AsyncStorage
-
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -12,7 +10,6 @@ import {
 import { useNavigation, useIsFocused } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
 import { API_URL } from "../utils/constants";
 
 type Post = {
@@ -27,6 +24,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [posts, setPosts] = useState<Post[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
+
   const navigation = useNavigation<any>();
   const isFocused = useIsFocused();
 
@@ -35,9 +33,7 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    if (isFocused) {
-      loadFavorites();
-    }
+    if (isFocused) loadFavorites();
   }, [isFocused]);
 
   const fetchPosts = async () => {
@@ -55,12 +51,8 @@ export default function HomeScreen() {
   const loadFavorites = async () => {
     try {
       const stored = await AsyncStorage.getItem(FAVORITES_KEY);
-      if (!stored) {
-        setFavoriteIds([]);
-        return;
-      }
-      const arr: number[] = JSON.parse(stored);
-      setFavoriteIds(arr);
+      if (!stored) return setFavoriteIds([]);
+      setFavoriteIds(JSON.parse(stored));
     } catch (error) {
       console.log("Errore caricamento preferiti (home)", error);
     }
@@ -68,15 +60,12 @@ export default function HomeScreen() {
 
   const toggleFavoriteFromList = async (postId: number) => {
     try {
-      let updated: number[];
+      // se già presente lo rimuove, altrimenti lo aggiunge
+      const updated = favoriteIds.includes(postId)
+        ? favoriteIds.filter((id) => id !== postId)
+        : [...favoriteIds, postId];
 
-      if (favoriteIds.includes(postId)) {
-        updated = favoriteIds.filter((id) => id !== postId);
-      } else {
-        updated = [...favoriteIds, postId];
-      }
-
-      setFavoriteIds(updated);
+      setFavoriteIds(updated); // aggiorna UI
       await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(updated));
     } catch (error) {
       console.log("Errore salvataggio preferiti (home)", error);
@@ -106,10 +95,7 @@ export default function HomeScreen() {
               {item.title}
             </Text>
 
-            <Pressable
-              onPress={() => toggleFavoriteFromList(item.id)}
-              hitSlop={10}
-            >
+            <Pressable onPress={() => toggleFavoriteFromList(item.id)}>
               <Ionicons
                 name={isFavorite ? "star" : "star-outline"}
                 size={20}

@@ -47,7 +47,6 @@ export default function MyTabs() {
           },
         })}
       >
-        {/* HOME → usa MyStacks (HomeScreen + DetailScreen) */}
         <Tab.Screen
           name="Home"
           component={MyStacks}
@@ -57,18 +56,8 @@ export default function MyTabs() {
         <Tab.Screen
           name="Favorites"
           component={FavoritesStack}
-          options={{
-            title: "Preferiti",
-            tabBarIcon: ({ focused, color }) => (
-              <Ionicons
-                name={focused ? "star" : "star-outline"}
-                size={26}
-                color={color}
-              />
-            ),
-          }}
+          options={{ title: "Preferiti" }}
         />
-
       </Tab.Navigator>
     </SafeAreaView>
   );
